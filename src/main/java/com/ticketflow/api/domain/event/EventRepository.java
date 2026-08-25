@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -88,4 +89,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                 ORDER BY total DESC
                 """, nativeQuery = true)    // [JAVA 15+] Text Block: string multilinha legível. Não existe no Java 8!
     List<Object[]> countPublishedEventsByCity();
+
+    List<Event> findByTicketPriceBetweenAndCityIgnoreCase(BigDecimal min, BigDecimal max, String city);
 }

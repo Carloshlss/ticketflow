@@ -103,6 +103,9 @@ public class Event {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "organizer_name", nullable = false, length = 50)
+    private String organizerName;
+
     /**
      * [JPA] @Version = LOCK OTIMISTA.
      * Como funciona: o Hibernate adiciona a versão no WHERE do UPDATE:
