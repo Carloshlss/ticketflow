@@ -1,0 +1,68 @@
+# [SPRING BOOT] Configuração externalizada. Qualquer propriedade aqui pode ser
+# sobrescrita por variável de ambiente — essencial para Docker e Cloud.
+# Ex.: SERVER_PORT=9090 sobrescreve server.port
+spring:
+  application:
+    name: ticketflow-api
+  profiles:
+    active: dev
+
+  # [SPRING BOOT + HIKARICP] Ao ver estas 3 propriedades + o driver no classpath,
+  # o Boot cria um DataSource (pool Hikari) automaticamente.
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ticketflow
+    username: ticketflow
+    password: ticketflow
+    hikari:
+      maximum-pool-size: 10           # nº máx de conexões simultâneas
+      connection-timeout: 30000       # ms esperando por uma conexão livre antes de falhar
+
+  # [JPA / HIBERNATE]
+  jpa:
+    hibernate:
+      # ⚠️ PROPRIEDADE MAIS PERIGOSA DO SPRING.
+      #   none     -> Hibernate não toca no schema
+      #   validate -> apenas confere se as entidades batem com as tabelas  ✅ usaremos
+      #   update   -> tenta alterar o schema (nunca remove nada; imprevisível)
+      #   create-drop -> APAGA o schema ao desligar
+      # Em produção: SEMPRE none ou validate. Quem versiona schema é o Flyway.
+      ddl-auto: validate
+      # false = não expõe a sessão do Hibernate na camada web.
+      # Evita o antipattern "Open Session in View", que esconde N+1 e
+      # mantém conexão presa durante a renderização da resposta.
+    open-in-view: false
+    show-sql: true                 # loga o SQL gerado — LIGADO PARA APRENDER
+    properties:
+      hibernate:
+        format_sql: true           # SQL indentado
+        jdbc:
+          # Agrupa múltiplos INSERTs numa ida só ao banco. Ganho enorme.
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true      # útil se o banco já existir com tabelas
+
+server:
+  port: 8080
+
+# [ACTUATOR] Por padrão só /health é exposto. Aqui liberamos mais e pedimos
+# detalhes no health (útil na Fase 2 para ver se o Postgres está OK).
+manegement:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# [OBSERVABILIDADE] Log em nível DEBUG só do nosso pacote, para aprendizado.
+logging:
+  level:
+    com.ticketflow.api: DEBUG
+    # Mostra os VALORES dos parâmetros (?) do SQL. Ative só em dev.
+    org.hibernate.orm.jdbc.bind: TRACE

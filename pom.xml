@@ -68,6 +68,30 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- [SPRING DATA JPA] Traz: Spring Data JPA + Hibernate + HikariCP +
+     spring-tx (transações) + spring-jdbc. Uma linha, toda a stack de persistência. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<!-- [DRIVER JDBC] Implementação do protocolo do PostgreSQL.
+     scope=runtime: precisa existir ao rodar, não ao compilar (seu código
+     nunca importa classes do driver — quem usa é o Hibernate). -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+			<version>10.20.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>

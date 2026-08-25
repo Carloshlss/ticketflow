@@ -1,0 +1,29 @@
+# [DOCKER COMPOSE] Descreve os serviços de infraestrutura como código.
+# Zero instalação na sua máquina — tudo em containers isolados e descartáveis.
+services:
+  postgres:
+    # [DOCKER] Imagem = template imutável. "17-alpine" = Postgres 17 em Linux
+    # Alpine (~80MB vs ~400MB). Sempre fixe a versão; "latest" quebra builds.
+    image: postgres:17-alpine
+    container_name: ticketflow-postgres
+    environment:
+      POSTGRES_DB: ticketflow
+      POSTGRES_USER: ticketflow
+      POSTGRES_PASSWORD: ticketflow
+    ports:
+      # "hostPort:containerPort" — mapeia a porta do container para sua máquina.
+      # 5433 fora para não colidir com um Postgres local, se você tiver.
+      - "5433:5432"
+    volumes:
+      # [DOCKER] Container é EFÊMERO: morre e perde tudo. O volume é o disco
+      # persistente. Sem esta linha, você perde o banco a cada "docker compose down".
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # Diz ao Docker COMO saber se o serviço está realmente pronto (não só "no ar").
+      test: ["CMD-SHELL", "pg_isready -U ticketflow -d ticketflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:

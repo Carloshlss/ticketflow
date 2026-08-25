@@ -1,5 +1,6 @@
 package com.ticketflow.api.web;
 
+import org.apache.catalina.core.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -50,8 +52,16 @@ public class StatusController {
     public ResponseEntity<StatusResponse> echo(@PathVariable String message){
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .header("X-Ticketflow-Fase", "1")
+                .header("X-Ticketflow-Phase", "1")
                 .body(new StatusResponse(message, "ticketflow-api", "v1", Instant.now()));
+    }
+
+    @GetMapping("/uptime")
+    public ResponseEntity<StatusUptimeResponse> getUptimeSeconds(){
+        final Instant START_TIME = Instant.now();
+        long uptimeSeconds = Duration.between(START_TIME, Instant.now()).toSeconds();
+        StatusUptimeResponse response = new StatusUptimeResponse(uptimeSeconds);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -67,6 +77,10 @@ public class StatusController {
      * o que elimina uma classe inteira de bugs. Fase 3 usa isso pra valer.
      */
     public record StatusResponse(String status, String sevice, String apiVersion, Instant timestamp){
+
+    }
+
+    public record StatusUptimeResponse(long uptimeSeconds){
 
     }
 }

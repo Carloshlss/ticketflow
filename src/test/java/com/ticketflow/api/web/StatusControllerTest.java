@@ -6,8 +6,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * [TESTE DE INTEGRAÇÃO - FATIADO] @WebMvcTest sobe APENAS a camada web
@@ -36,7 +35,8 @@ class StatusControllerTest {
     void givenMessageInUrl_whenEndpointIsCalled_thenEchoReceivedMessage() throws Exception{
         mockMvc.perform(get("/api/v1/status/echo/hello"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("hello"));
+                .andExpect(jsonPath("$.status").value("hello"))
+                .andExpect(header().string("X-Ticketflow-Phase", "1"));
     }
 
     @Test
