@@ -1,0 +1,13 @@
+# [SPRING BOOT] application-{profile}.yml é MESCLADO com o application.yml
+# e tem PRECEDÊNCIA sobre ele. Chaves não repetidas aqui herdam a base.
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    com.ticket.api: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

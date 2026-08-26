@@ -18,15 +18,28 @@ import java.time.temporal.ChronoUnit;
 
 /**
  * [SPRING BOOT] ApplicationRunner executa código após o contexto subir.
- * [SPRING CORE] @Profile("dev") — só roda no perfil "dev". Perfis isolam
+ * [SPRING CORE] @Profile("lab") — só roda no perfil "lab". Perfis isolam
  * comportamento por ambiente (dev/test/prod). Ative com:
- *   spring.profiles.active=dev
+ *   spring.profiles.active=lab
+ */
+/**
+ * ⚠️ CLASSE DE ESTUDO / LABORATÓRIO — não faz parte do fluxo da aplicação.
  *
- * ⚠️ ARQUIVO TEMPORÁRIO — apagamos quando existir o controller.
+ * [SPRING CORE] @Profile("lab"): este bean só é registrado no contexto quando
+ * o perfil "lab" estiver ativo. Com o perfil desligado, a classe nem é
+ * instanciada — custo zero em runtime, código preservado para consulta.
+ *
+ * Como executar quando quiser estudar:
+ *   - IntelliJ: Run Configuration -> Active profiles: dev,lab
+ *   - Terminal: mvn spring-boot:run -Dspring-boot.run.profiles=dev,lab
+ *   - Jar:      java -jar app.jar --spring.profiles.active=dev,lab
+ *
+ * Substitui deprecar/comentar: a classe compila, a IDE ainda navega nela,
+ * mas não interfere na aplicação.
  */
 @Slf4j                    // [LOMBOK] gera: private static final Logger log = ...
 @Configuration
-@Profile("dev")
+@Profile("lab")
 @RequiredArgsConstructor  // [LOMBOK] construtor com os campos final => injeção por construtor
 public class EventDataExplorer {
 
@@ -81,34 +94,35 @@ public class EventDataExplorer {
             Event updated = eventRepository.save(created);
             log.info("available={} version={} (version incrementou!)",
                     updated.getAvailableTickets(), updated.getVersion());
-            Long EventId = updated.getId();
+//            Long EventId = updated.getId();
 
-            log.info("=== 7. Prova de concorrência (Lock Otimista) ===");
-
-            // Simula o Usuário A buscando o evento
-            Event userA = eventRepository.findById(EventId).orElseThrow(() -> new RuntimeException("Event not found!"));
-            // Desvincula o Usuário A do cache em memória para forçar uma nova busca real no próximo findById
-            entityManager.detach(userA);
-
-            // Simula o Usuário B buscando o MESMO evento (com o mesmo número de versão do banco)
-            Event userB = eventRepository.findById(EventId).orElseThrow(() -> new RuntimeException("Event not found!"));
-
-            // Usuário A faz uma reserva e salva primeiro
-            log.info("[User A] Reservando 5 ingressos...");
-            userA.reserveTickets(5);
-            eventRepository.save(userA); // Sucesso! A versão no banco vai incrementar
-            log.info("[User A] Salvo com sucesso. Versão no banco incrementada.");
-
-            // Usuário B tenta salvar sua alteração baseada na versão desatualizada que ele leu
-            try{
-                log.info("[User B] Tentando reservar 2 ingressos ao mesmo tempo...");
-                userB.reserveTickets(2);
-                eventRepository.save(userB); // O Hibernate vai interceptar e lançar o erro aqui!
-            } catch(ObjectOptimisticLockingFailureException e){
-                log.error("TEST SUCCESSFULL! Lock Otimista bloqueou a alteração concorrente.");
-                log.error("Exceção capturada com sucesso: {}", e.getClass().getSimpleName());
-                log.warn("Error message: {}", e.getMessage());
-            }
+//            NÃO ESTÁ CERTO!!
+//            log.info("=== 7. Prova de concorrência (Lock Otimista) ===");
+//
+//            // Simula o Usuário A buscando o evento
+//            Event userA = eventRepository.findById(EventId).orElseThrow(() -> new RuntimeException("Event not found!"));
+//            // Desvincula o Usuário A do cache em memória para forçar uma nova busca real no próximo findById
+//            entityManager.detach(userA);
+//
+//            // Simula o Usuário B buscando o MESMO evento (com o mesmo número de versão do banco)
+//            Event userB = eventRepository.findById(EventId).orElseThrow(() -> new RuntimeException("Event not found!"));
+//
+//            // Usuário A faz uma reserva e salva primeiro
+//            log.info("[User A] Reservando 5 ingressos...");
+//            userA.reserveTickets(5);
+//            eventRepository.save(userA); // Sucesso! A versão no banco vai incrementar
+//            log.info("[User A] Salvo com sucesso. Versão no banco incrementada.");
+//
+//            // Usuário B tenta salvar sua alteração baseada na versão desatualizada que ele leu
+//            try{
+//                log.info("[User B] Tentando reservar 2 ingressos ao mesmo tempo...");
+//                userB.reserveTickets(2);
+//                eventRepository.save(userB); // O Hibernate vai interceptar e lançar o erro aqui!
+//            } catch(ObjectOptimisticLockingFailureException e){
+//                log.error("TEST SUCCESSFULL! Lock Otimista bloqueou a alteração concorrente.");
+//                log.error("Exceção capturada com sucesso: {}", e.getClass().getSimpleName());
+//                log.warn("Error message: {}", e.getMessage());
+//            }
 
             log.info("=== 8. testando o findByTicketPriceBetweenAndCityIgnoreCase no repositório ===");
             eventRepository.findByTicketPriceBetweenAndCityIgnoreCase(
