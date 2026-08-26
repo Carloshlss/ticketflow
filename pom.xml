@@ -40,6 +40,10 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		<dependency>
@@ -91,6 +95,21 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 			<version>10.20.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
+		<!-- [OPENAPI] springdoc gera a especificação OpenAPI 3 lendo seus
+     controllers e DTOs por reflection, e serve o Swagger UI.
+     ⚠️ Verifique a versão compatível com Spring Boot 4 em
+     https://springdoc.org — o artifactId muda entre linhas do Boot. -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>3.1.0</version>
 		</dependency>
 	</dependencies>
 

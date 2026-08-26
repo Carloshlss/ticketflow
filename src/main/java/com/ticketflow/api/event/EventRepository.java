@@ -1,4 +1,4 @@
-package com.ticketflow.api.domain.event;
+package com.ticketflow.api.event;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

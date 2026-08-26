@@ -1,8 +1,8 @@
 package com.ticketflow.api.config;
 
-import com.ticketflow.api.domain.event.Event;
-import com.ticketflow.api.domain.event.EventRepository;
-import com.ticketflow.api.domain.event.EventStatus;
+import com.ticketflow.api.event.Event;
+import com.ticketflow.api.event.EventRepository;
+import com.ticketflow.api.event.EventStatus;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.math.BigDecimal;
 import java.time.Instant;

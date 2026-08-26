@@ -1,4 +1,4 @@
-package com.ticketflow.api.domain.event;
+package com.ticketflow.api.event;
 
 // [JPA] Toda anotação de mapeamento vem de jakarta.persistence.
 // (Se você ver "javax.persistence" em algum tutorial, é pré-Spring Boot 3.)

@@ -1,4 +1,4 @@
-package com.ticketflow.api.domain.event;
+package com.ticketflow.api.event;
 
 public enum EventStatus {
     DRAFT,      // criado, não visível ao público
