@@ -1,9 +1,6 @@
 package com.ticketflow.api.event;
 
-import com.ticketflow.api.event.dto.CreateEventRequest;
-import com.ticketflow.api.event.dto.EventResponse;
-import com.ticketflow.api.event.dto.EventSummaryResponse;
-import com.ticketflow.api.event.dto.UpdateEventRequest;
+import com.ticketflow.api.event.dto.*;
 import com.ticketflow.api.shared.dto.PagedResponse;
 import com.ticketflow.api.shared.exception.BusinessRuleException;
 import com.ticketflow.api.shared.exception.DuplicateResourceException;
@@ -51,7 +48,7 @@ public class EventService {
         // + um SELECT COUNT(*) para os metadados do Page.
         return PagedResponse.from(
                 eventRepository.findAll(pageable),
-                eventMapper::toSumaryResponse   // [JAVA 8] method reference
+                eventMapper::toSummaryResponse   // [JAVA 8] method reference
         );
     }
 
@@ -65,7 +62,7 @@ public class EventService {
     public PagedResponse<EventSummaryResponse> findPublishedByCity(String city, Pageable pageable){
         return PagedResponse.from(
                 eventRepository.findByCityIgnoreCaseAndStatusOrderByStartsAtAsc(city, EventStatus.PUBLISHED, pageable),
-                eventMapper::toSumaryResponse
+                eventMapper::toSummaryResponse
         );
     }
 
@@ -98,7 +95,7 @@ public class EventService {
         // exists e o insert, outra thread pode inserir o mesmo nome.
         // Garantia real = UNIQUE constraint no banco (desafio desta fase).
         // Este check existe para dar uma mensagem BONITA no caso comum.
-        if(eventRepository.existsByNameIgnoreCase((request.name()))){
+        if(eventRepository.existsByNameIgnoreCase(request.name())){
             throw DuplicateResourceException.of("Event", "name", request.name());
         }
 

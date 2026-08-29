@@ -2,7 +2,9 @@ package com.ticketflow.api.shared.exception;
 
 import com.ticketflow.api.shared.dto.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -15,8 +17,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * [SPRING MVC] @RestControllerAdvice = @ControllerAdvice + @ResponseBody.
@@ -83,14 +85,21 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request){
-        List<ApiError.FieldError> fieldErrors = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(fe -> new ApiError.FieldError(
-                        fe.getField(),
-                        fe.getRejectedValue(),
-                        fe.getDefaultMessage()))
-                .toList();
+        List<ApiError.FieldError> fieldErrors = new ArrayList<>(
+                ex.getBindingResult().getFieldErrors().stream()
+                        .map(fe -> new ApiError.FieldError(
+                                fe.getField(),
+                                fe.getRejectedValue(),
+                                fe.getDefaultMessage()))
+                        .toList()
+        );
+
+        ex.getBindingResult().getGlobalErrors()
+                        .forEach(ge -> fieldErrors.add(new ApiError.FieldError(
+                                "_object",
+                                null,
+                                ge.getDefaultMessage()
+                        )));
 
         log.warn("Validation failed for {}: {} error(s)", request.getRequestURI(), fieldErrors.size());
 
@@ -127,6 +136,21 @@ public class GlobalExceptionHandler {
                 "Required parameter '%s' is missing".formatted(ex.getParameterName()), request, null);
     }
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolation(
+            ConstraintViolationException ex, HttpServletRequest request){
+        List<ApiError.FieldError> fieldErrors = ex.getConstraintViolations().stream()
+                .map(v -> new ApiError.FieldError(
+                        v.getPropertyPath().toString(),
+                        v.getInvalidValue(),
+                        v.getMessage()))
+                .toList();
+
+        log.warn("Parameter validation failed for {}", request.getRequestURI());
+        return build(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "one or more parameters are invalid",
+                request, fieldErrors);
+    }
+
     /**
      * [SPRING DATA] Constraint do BANCO violada (unique, not null, FK, check).
      * É a nossa REDE DE SEGURANÇA: se o check TOCTOU do service escapou por
@@ -158,7 +182,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleUnexpected(Exception ex, HttpServletRequest request){
-        String traceId = UUID.randomUUID().toString();
+        String traceId = MDC.get("requestId");
         log.error("Unexpected error traceId={} path={}", traceId, request.getRequestURI(), ex);
 
         ApiError error = new ApiError(

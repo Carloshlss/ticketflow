@@ -103,7 +103,7 @@ public class EventMapper {
     }
 
     /** Entidade -> DTO resumido, para listagens. */
-    public EventSummaryResponse toSumaryResponse(Event event){
+    public EventSummaryResponse toSummaryResponse(Event event){
         return new EventSummaryResponse(
                 event.getId(),
                 event.getName(),

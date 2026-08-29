@@ -33,7 +33,7 @@ public record EventResponse(
         // CAMPOS CALCULADOS — não existem no banco
         Integer soldTickets,
         Double occupancyRate,
-        boolean solgOut,
+        boolean soldOut,
 
         EventStatus status,
         Instant createdAt,

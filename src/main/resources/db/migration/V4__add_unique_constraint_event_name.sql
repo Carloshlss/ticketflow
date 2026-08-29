@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX uk_event_name_lower ON event (LOWER(name));
