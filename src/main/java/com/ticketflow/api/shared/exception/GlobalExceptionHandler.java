@@ -15,6 +15,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -47,6 +48,13 @@ public class GlobalExceptionHandler {
         // WARN e não ERROR: recurso inexistente é operação normal do dia a dia.
         // Poluir o log de ERROR com 404 faz você ignorar erros de verdade.
         return build(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handlerNoResourceFound(NoResourceFoundException ex, HttpServletRequest request){
+        log.warn("Route not found> {}", request.getRequestURI());
+
+        return build(HttpStatus.NOT_FOUND, "ROUTE_NOT_FOUND", ex.getMessage(), request, null);
     }
 
     // ============ 409 CONFLICT ============

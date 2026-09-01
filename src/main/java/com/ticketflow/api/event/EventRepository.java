@@ -3,6 +3,7 @@ package com.ticketflow.api.event;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,8 +28,20 @@ import java.util.Optional;
  *
  * <Event, Long> = <tipo da entidade, tipo do id>
  */
+/**
+ * [SPRING DATA JPA] JpaSpecificationExecutor adiciona os métodos que
+ * aceitam Specification:
+ *   findAll(Specification), findAll(Specification, Pageable),
+ *   findOne(Specification), count(Specification), exists(Specification)
+ *
+ *   Herdar de duas interfaces aqui é [SOLID - Interface Segregation] a favor:
+ *   você compõe só as capacidades que precisa.
+ *
+ * Note: nenhum método novo escrito por você. É a INTERFACE que traz.
+ */
 @Repository
-public interface EventRepository extends JpaRepository<Event, Long> {
+public interface EventRepository extends JpaRepository<Event, Long>,
+        JpaSpecificationExecutor<Event> {
 
     // Herdado de graça: save, saveAll, findById, findAll, findAll(Pageable),
     // count, existsById, delete, deleteById, flush...

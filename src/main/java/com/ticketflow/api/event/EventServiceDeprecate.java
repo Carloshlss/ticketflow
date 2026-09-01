@@ -31,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 // readOnly=true como padrão SEGURO: quem escreve precisa declarar
 // explicitamente. Inverte o risco a nosso favor.
 @Transactional(readOnly = true)
-public class EventService {
+public class EventServiceDeprecate {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
 
@@ -190,7 +190,7 @@ public class EventService {
         Event event = findEntityById(id);
 
         if(event.getAvailableTickets() < event.getTotalTickets()){
-            throw new BusinessRuleException("Canot delete an event with sold tickets. Cancel it instead.",
+            throw new BusinessRuleException("Cannot delete an event with sold tickets. Cancel it instead.",
                     "EVENT_HAS_SALES");
         }
         eventRepository.delete(event);

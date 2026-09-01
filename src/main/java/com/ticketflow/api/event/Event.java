@@ -2,6 +2,8 @@ package com.ticketflow.api.event;
 
 // [JPA] Toda anotação de mapeamento vem de jakarta.persistence.
 // (Se você ver "javax.persistence" em algum tutorial, é pré-Spring Boot 3.)
+import com.ticketflow.api.shared.exception.BusinessRuleException;
+import com.ticketflow.api.shared.exception.IllegalStateStateTransition;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -155,6 +157,32 @@ public class Event {
         if(this.status == EventStatus.SOLD_OUT && this.availableTickets > 0){
             this.status = EventStatus.PUBLISHED;
         }
+    }
+
+    public void transitionTo(EventStatus target){
+        if(!this.status.canTransitionTo(target)){
+            throw new IllegalStateStateTransition(this.status, target);
+        }
+        this.status = target;
+    }
+
+    public void publish(){
+        if(hasAlreadyStarted()){
+            throw new BusinessRuleException("Cannot publish an event that already started", "EVENT_ALREADY_STARTED");
+        }
+        transitionTo(EventStatus.PUBLISHED);
+    }
+
+    public void cancel(){
+        transitionTo(EventStatus.CANCELLED);
+    }
+
+    public boolean hasAlreadyStarted(){
+        return startsAt.isBefore(Instant.now());
+    }
+
+    public boolean hasSales(){
+        return availableTickets < totalTickets;
     }
 
     // ===================================================================

@@ -1,5 +1,6 @@
 package com.ticketflow.api.config;
 
+import com.ticketflow.api.FreeEvent;
 import com.ticketflow.api.event.Event;
 import com.ticketflow.api.event.EventRepository;
 import com.ticketflow.api.event.EventStatus;
@@ -128,6 +129,31 @@ public class EventDataExplorer {
                     new BigDecimal("50.00"), new BigDecimal("350.00"), "São Paulo")
                     .forEach(e -> log.info("{} | {} | {} | {}",
                             e.getId(), e.getName(), e.getTicketPrice(), e.getCity()));
+
+            log.info("=== 9. VIOLAÇÃO PROPOSITAL DE LSP ===");
+
+            // 1. Criamos um evento gratuito usando a referência da classe pai (Polimorfismo normal)
+            Event eventoPromocional = new FreeEvent();
+            eventoPromocional.setName("Palestra Gratuita de Clean Code");
+            eventoPromocional.setTicketPrice(BigDecimal.ZERO); // Funciona normal, é zero.
+
+            log.info("Evento gratuito criado: {}", eventoPromocional.getName());
+
+            // 2. Simulação do Erro: Imagine um método genérico do sistema que decide aplicar
+            // uma taxa administrativa de lote de R$ 10,00 em um evento qualquer do banco.
+            try {
+                log.info("Tentando aplicar taxa de lote de R$ 10.00 usando a referência genérica Event...");
+
+                // O código acha que está mexendo em um Event comum e tenta setar o preço.
+                // Aqui o sistema vai quebrar com a UnsupportedOperationException!
+                eventoPromocional.setTicketPrice(new BigDecimal("10.00"));
+
+            } catch (UnsupportedOperationException e) {
+                log.error("💥 ERRO DE INFRAESTRUTURA DETECTADO!");
+                log.error("Motivo da quebra de LSP: {}", e.getMessage());
+                log.warn("Análise Técnica: A herança nos enganou. Achamos que FreeEvent era um Event legítimo, " +
+                        "mas ele quebrou o contrato estabelecido pela classe pai ao lançar uma exceção inesperada!");
+            }
         };
     }
 }

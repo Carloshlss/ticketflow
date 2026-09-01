@@ -3,7 +3,6 @@ package com.ticketflow.api.event;
 import com.ticketflow.api.event.dto.*;
 import com.ticketflow.api.shared.dto.PagedResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,7 +29,8 @@ import java.net.URI;
 @RequiredArgsConstructor
 @Validated
 public class EventController {
-    private final EventService eventService;
+    private final EventQueryService eventQueryService;
+    private final EventCommandService eventCommandService;
 
     /**
      * [API REST] GET /api/v1/events?page=0&size=20&sort=startsAt,asc
@@ -49,7 +49,7 @@ public class EventController {
     @GetMapping
     public PagedResponse<EventSummaryResponse> listEvents(
             @PageableDefault(size = 20, sort = "startsAt", direction = Sort.Direction.ASC) Pageable pageable) {
-        return eventService.findAll(pageable);
+        return eventQueryService.findAll(pageable);
     }
 
     /**
@@ -57,11 +57,27 @@ public class EventController {
      * Regra: @PathVariable IDENTIFICA o recurso; @RequestParam FILTRA/ORDENA.
      * Cidade é filtro, então é query param.
      */
+    /**
+     * [API REST] Busca avançada. O EventFilter é populado dos query params.
+     *
+     * GET /api/v1/events/search?city=Sao Paulo&minPrice=100&maxPrice=500
+     *     &search=rock&onlyAvailable=true&page=0&size=20&sort=ticketPrice,asc
+     *
+     * Substitui o searchByCity anterior — este resolve todos os casos.
+     */
     @GetMapping("/search")
     public PagedResponse<EventSummaryResponse> searchByCity(
-            @RequestParam @NotBlank(message = "City is required") String city,
+            @Valid EventFilter filter,
             @PageableDefault(size = 20, sort = "startsAt")Pageable pageable){
-        return eventService.findPublishedByCity(city, pageable);
+        return eventQueryService.search(filter, pageable);
+    }
+
+    /** [API REST] A vitrine pública — o endpoint principal do Angular. */
+    @GetMapping("/showcase")
+    public PagedResponse<EventSummaryResponse> showcase(
+            @Valid EventFilter filter,
+            @PageableDefault(size = 12, sort = "startsAt") Pageable pageable){
+        return eventQueryService.findShowcase(filter, pageable);
     }
 
     /**
@@ -71,7 +87,7 @@ public class EventController {
      */
     @GetMapping("/{id}")
     public EventResponse getEvent(@PathVariable Long id){
-        return eventService.findById(id);
+        return eventQueryService.findById(id);
     }
 
     /**
@@ -91,7 +107,7 @@ public class EventController {
     @PostMapping
     public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventRequest request,
                                                        UriComponentsBuilder uriBuilder){   // [SPRING MVC] injetado; conhece host/porta
-        EventResponse created = eventService.create(request);
+        EventResponse created = eventCommandService.create(request);
 
         URI location = uriBuilder
                 .path("/api/v1/event/{id}")
@@ -109,7 +125,7 @@ public class EventController {
     @PutMapping("/{id}")
     public EventResponse updateEvent(@PathVariable Long id,
                                      @Valid @RequestBody UpdateEventRequest request){
-        return eventService.update(id, request);
+        return eventCommandService.update(id, request);
     }
 
     /**
@@ -119,12 +135,12 @@ public class EventController {
      */
     @PostMapping("/{id}/publish")
     public EventResponse publishEvent(@PathVariable Long id){
-        return eventService.publish(id);
+        return eventCommandService.publish(id);
     }
 
     @PostMapping("/{id}/cancel")
-    public EventResponse cancelEvent(@PathVariable Long id){
-        return eventService.cancel(id);
+    public EventResponse cancelEvent(@PathVariable Long id, @RequestBody String reason){
+        return eventCommandService.cancel(id, reason);
     }
 
     /**
@@ -134,6 +150,6 @@ public class EventController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEvent(@PathVariable Long id){
-        eventService.delete(id);
+        eventCommandService.delete(id);
     }
 }

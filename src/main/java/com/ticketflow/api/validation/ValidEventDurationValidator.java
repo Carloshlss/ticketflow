@@ -1,5 +1,6 @@
 package com.ticketflow.api.validation;
 
+import com.ticketflow.api.event.EventPolicy;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,6 @@ import java.time.Duration;
 
 @RequiredArgsConstructor
 public class ValidEventDurationValidator implements ConstraintValidator<ValidEventDuration, EventIntervalAware> {
-    final int MAX_EVENT_DURATION_HOURS = 72;
 
     @Override
     public boolean isValid(EventIntervalAware dto, ConstraintValidatorContext context){
@@ -24,6 +24,6 @@ public class ValidEventDurationValidator implements ConstraintValidator<ValidEve
             return true;
         }
 
-        return duration.toHours() <= MAX_EVENT_DURATION_HOURS;
+        return duration.toHours() <= EventPolicy.MAX_EVENT_DURATION_HOURS;
     }
 }

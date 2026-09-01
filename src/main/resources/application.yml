@@ -68,3 +68,8 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%X{requestId:-no-request-id}]){cyan} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
