@@ -7,14 +7,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
@@ -50,11 +54,70 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", ex.getMessage(), request, null);
     }
 
-    @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ApiError> handlerNoResourceFound(NoResourceFoundException ex, HttpServletRequest request){
-        log.warn("Route not found> {}", request.getRequestURI());
+    /**
+     * [SPRING MVC 6.1+] Rota inexistente.
+     *
+     * Contexto histórico (útil para entender tutoriais antigos):
+     *   - Até o Spring 6.0, uma URL desconhecida caía no ResourceHttpRequestHandler
+     *     e virava NoHandlerFoundException, mas SÓ se você ligasse a propriedade
+     *     spring.mvc.throw-exception-if-no-handler-found=true.
+     *   - Do Spring 6.1 em diante (nosso caso, Framework 7), a exceção padrão é
+     *     NoResourceFoundException e o comportamento já vem ligado.
+     * Trato as duas para robustez e para não depender dessa configuração.
+     *
+     * ⚠️ Este handler existe por causa do @ExceptionHandler(Exception.class):
+     * sem ele, o catch-all converteria um 404 legítimo do framework em 500.
+     */
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiError> handlerRouteNotFound(Exception ex, HttpServletRequest request){
+        log.warn("Route not found> {} {}", request.getMethod(), request.getRequestURI());
 
-        return build(HttpStatus.NOT_FOUND, "ROUTE_NOT_FOUND", ex.getMessage(), request, null);
+        return build(HttpStatus.NOT_FOUND, "ROUTE_NOT_FOUND",
+                "The requested endpoint does not exist", request, null);
+    }
+
+    /**
+     * [HTTP] 405 Method Not Allowed: a URL existe, o VERBO não é suportado.
+     * Ex.: DELETE /api/v1/events (sem id).
+     *
+     * A RFC 7231 EXIGE o header 'Allow' listando os métodos permitidos numa
+     * resposta 405. Devolver 405 sem ele é resposta tecnicamente incorreta —
+     * detalhe que separa uma API amadora de uma profissional.
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest request){
+        log.warn("Method not allowed: {} {}", ex.getMethod(), request.getRequestURI());
+
+        ApiError error = new ApiError(
+                Instant.now(),
+                HttpStatus.METHOD_NOT_ALLOWED.value(),
+                HttpStatus.METHOD_NOT_ALLOWED.getReasonPhrase(),
+                "METHOD_NOT_ALLOWED",
+                "HTTP method %s is not supported for this endpoint".formatted(ex.getMethod()),
+                request.getRequestURI(),
+                null,
+                null);
+
+        HttpHeaders headers = new HttpHeaders();
+        if(ex.getSupportedHttpMethods() != null){
+            headers.setAllow(ex.getSupportedHttpMethods());
+        }
+        return new ResponseEntity<>(error, headers, HttpStatus.METHOD_NOT_ALLOWED);
+    }
+
+    /**
+     * [HTTP] 415 Unsupported Media Type: Content-Type que não sabemos ler.
+     * É exatamente o erro que você levou ao tentar o curl do cancel com
+     * @RequestBody String — veja a seção do Desafio 3.
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex, HttpServletRequest request){
+        log.warn("Unsupported media type: {}", ex.getContentType());
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "uNSUPPORTED_MEDIA_TYPE",
+                "content-Type '%s' is not supported. Use application/json.".formatted(ex.getContentType()),
+                request, null);
     }
 
     // ============ 409 CONFLICT ============

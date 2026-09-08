@@ -3,7 +3,7 @@ package com.ticketflow.api.event;
 // [JPA] Toda anotação de mapeamento vem de jakarta.persistence.
 // (Se você ver "javax.persistence" em algum tutorial, é pré-Spring Boot 3.)
 import com.ticketflow.api.shared.exception.BusinessRuleException;
-import com.ticketflow.api.shared.exception.IllegalStateStateTransition;
+import com.ticketflow.api.event.exception.InvalidEventStatusTransitionException;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -161,7 +161,7 @@ public class Event {
 
     public void transitionTo(EventStatus target){
         if(!this.status.canTransitionTo(target)){
-            throw new IllegalStateStateTransition(this.status, target);
+            throw new InvalidEventStatusTransitionException(this.status, target);
         }
         this.status = target;
     }

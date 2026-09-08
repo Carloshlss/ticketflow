@@ -2,7 +2,7 @@
 # e tem PRECEDÊNCIA sobre ele. Chaves não repetidas aqui herdam a base.
 spring:
   jpa:
-    show-sql: true
+    show-sql: false          # ← desligue; o p6spy substitui
     properties:
       hibernate:
         format_sql: true
@@ -14,4 +14,9 @@ spring:
 logging:
   level:
     com.ticket.api: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE
+    org.hibernate.orm.jdbc.bind: OFF   # ← desnecessário com p6spy
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true

@@ -1,14 +1,16 @@
-package com.ticketflow.api.event;
+package com.ticketflow.api.legacy;
 
+import com.ticketflow.api.event.Event;
+import com.ticketflow.api.event.EventMapper;
+import com.ticketflow.api.event.EventRepository;
+import com.ticketflow.api.event.EventStatus;
 import com.ticketflow.api.event.dto.*;
 import com.ticketflow.api.shared.dto.PagedResponse;
 import com.ticketflow.api.shared.exception.BusinessRuleException;
 import com.ticketflow.api.shared.exception.DuplicateResourceException;
 import com.ticketflow.api.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -24,14 +26,24 @@ import org.springframework.transaction.annotation.Transactional;
  * EventRepository, não de uma implementação concreta. Em teste unitário
  * (Fase 5) trocamos por um mock sem tocar nesta classe.
  */
-@Slf4j
-@Service
+/**
+ * ⚠️ CLASSE DE ESTUDO — versão monolítica anterior ao split CQS da Fase 4.
+ *
+ * NÃO é um bean: o @Service foi REMOVIDO deliberadamente. O Spring não a
+ * registra no contexto, ninguém a injeta, e ela custa zero em runtime.
+ * Continua compilando, então a IDE ainda navega e o refactor ainda a alcança
+ * (o que impede o apodrecimento que código comentado sofre).
+ *
+ * Substituída por: EventQueryService (leitura) + EventCommandService (escrita).
+ * @deprecated mantida apenas como material de comparação didática.
+ */
+@Deprecated(since = "phase-04", forRemoval = true)
 @RequiredArgsConstructor
 // [SPRING TX] @Transactional na CLASSE = default para todos os métodos.
 // readOnly=true como padrão SEGURO: quem escreve precisa declarar
 // explicitamente. Inverte o risco a nosso favor.
 @Transactional(readOnly = true)
-public class EventServiceDeprecate {
+public class EventServiceLegacy {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
 
@@ -42,7 +54,7 @@ public class EventServiceDeprecate {
      * Herda readOnly=true da classe: sem dirty checking, sem flush.
      */
     public PagedResponse<EventSummaryResponse> findAll(Pageable pageable){
-        log.debug("Fetching events page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
+        //log.debug("Fetching events page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
 
         // Herdado de JpaRepository. Gera SELECT ... LIMIT ? OFFSET ?
         // + um SELECT COUNT(*) para os metadados do Page.
@@ -88,7 +100,7 @@ public class EventServiceDeprecate {
      */
     @Transactional
     public EventResponse create(CreateEventRequest request){
-        log.info("Creating event: {}", request.name());
+        //log.info("Creating event: {}", request.name());
 
         // REGRA DE NEGÓCIO 1: nome único
         // ⚠️ Isto é um check TOCTOU (time-of-check to time-of-use): entre o
@@ -102,7 +114,7 @@ public class EventServiceDeprecate {
         Event event = eventMapper.toEntity(request);
         Event saved = eventRepository.save(event);   // sempre use o retorno
 
-        log.info("Event created id={}", saved.getId());
+        //log.info("Event created id={}", saved.getId());
 
         return eventMapper.toResponse(saved);
     }
@@ -120,7 +132,7 @@ public class EventServiceDeprecate {
      */
     @Transactional
     public EventResponse update(Long id, UpdateEventRequest request){
-        log.info("Updating event id={}", id);
+        //log.info("Updating event id={}", id);
 
         Event event = findEntityById(id);
 
@@ -161,7 +173,7 @@ public class EventServiceDeprecate {
         }
 
         event.setStatus(EventStatus.PUBLISHED);
-        log.info("Event id={} published", id);
+        //log.info("Event id={} published", id);
         // Aqui publicaremos um evento Kafka "EventCancelled"
         // para disparar reembolsos e notificações de forma assíncrona.
         return eventMapper.toResponse(event);
@@ -181,7 +193,7 @@ public class EventServiceDeprecate {
             throw new BusinessRuleException("Cannot cancel a finished event", "EVENT_ALREADY_FINISHED");
         }
         event.setStatus(EventStatus.CANCELLED);
-        log.info("Event id={} cancelled", id);
+        //log.info("Event id={} cancelled", id);
         return eventMapper.toResponse(event);
     }
 
@@ -194,6 +206,6 @@ public class EventServiceDeprecate {
                     "EVENT_HAS_SALES");
         }
         eventRepository.delete(event);
-        log.info("Event id={} deleted", id);
+        //log.info("Event id={} deleted", id);
     }
 }

@@ -52,8 +52,9 @@ public final class EventSpecification {
         if(organizerName == null || organizerName.isBlank()){
             return (root, query, cb) -> null;
         }
+        String pattern = "%" + organizerName.toLowerCase().trim() + "%";
         return (root, query, cb) ->
-                cb.like(cb.lower(root.get("organizerName")), organizerName.toLowerCase());
+                cb.like(cb.lower(root.get("organizerName")), pattern);
     }
 
     /**
@@ -65,8 +66,8 @@ public final class EventSpecification {
             return (root, query, cb) -> null;
         }
         return (root, query, cb) -> {
-            if (min == null) return cb.lessThanOrEqualTo(root.get("TicketPrice"), max);
-            if (max == null) return cb.greaterThanOrEqualTo(root.get("ticketPrice"), max);
+            if (min == null) return cb.lessThanOrEqualTo(root.get("ticketPrice"), max);
+            if (max == null) return cb.greaterThanOrEqualTo(root.get("ticketPrice"), min);
             return cb.between(root.get("ticketPrice"), min, max);
         };
     }
@@ -99,7 +100,7 @@ public final class EventSpecification {
             String pattern = "%" + text.toLowerCase() + "%";
             return cb.or(
                     cb.like(cb.lower(root.get("name")), pattern),
-                    cb.like(cb.lower(root.get("description")), pattern),
+                    cb.like(cb.lower(cb.coalesce(root.get("description"), "")), pattern),  //A diferença para os outros é que esse é um campo TEXT no banco
                     cb.like(cb.lower(root.get("venue")), pattern),
                     cb.like(cb.lower(root.get("organizerName")), pattern)
             );

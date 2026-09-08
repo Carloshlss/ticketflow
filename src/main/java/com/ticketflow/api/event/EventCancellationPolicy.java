@@ -1,36 +1,67 @@
 package com.ticketflow.api.event;
 
 import com.ticketflow.api.shared.exception.BusinessRuleException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
+/**
+ * [SRP] Responsabilidade única: DECIDIR se um evento pode ser cancelado.
+ * Ela não cancela, não notifica, não persiste. Só decide.
+ *
+ * [SOLID] Extraída do EventCommandService porque é uma regra que:
+ *   - tem seus próprios critérios (status, janela de tempo, motivo)
+ *   - muda por motivos próprios (o jurídico redefine a janela de 24h)
+ *   - precisa ser testada isoladamente
+ *
+ * [TESTABILIDADE] Depende de Clock, não de Instant.now(). Em teste unitário:
+ *   new EventCancellationPolicy(Clock.fixed(instanteEscolhido, ZoneOffset.UTC))
+ * Sem Spring, sem banco, roda em milissegundos.
+ */
 @Component
+@RequiredArgsConstructor
 public class EventCancellationPolicy {
-    public void check(Event event, String reason, Instant now){
-        statusAbleToCancel(event);
-        eventStartsCancellation(event, reason, now);
+    /** [CLEAN CODE] Constante nomeada em vez do literal 24 espalhado no código. */
+    private static final Duration REASON_REQUIRED_WINDOW = Duration.ofHours(24);
+
+    private final Clock clock;
+
+    public void ensureCanBeCancelled(Event event, String reason){
+        Instant now = clock.instant();
+
+        validateStatusAllowsCancellation(event);
+        validateEventHasNotStarted(event, now);
+        validateReasonWhenCloseToStart(event, reason, now);
     }
 
-    private static void eventStartsCancellation(Event event, String reason, Instant now) {
+    private void validateStatusAllowsCancellation(Event event){
+        if(!event.getStatus().canTransitionTo(EventStatus.CANCELLED)){
+            throw new BusinessRuleException(
+                    "Cannot cancel an event with status %s".formatted(event.getStatus()), "INVALID_STATUS_TRANSITION");
+        }
+    }
+
+    private void validateEventHasNotStarted(Event event, Instant now){
         if(now.isAfter(event.getStartsAt())){
             throw new BusinessRuleException(
-                    "Cannot publish an event that already started", "EVENT_ALREADY_STARTED");
-        }
-        Duration durationToStart = Duration.between(now, event.getStartsAt());
-        if(durationToStart.toHours() < 24
-                && (reason == null || reason.isBlank())){
-            throw new BusinessRuleException(
-                    "Cannot cancel an event less then 24 hours to start without a reason", "EVENT_NOT_EDITABLE");
+                    "Cannot cancel an event that already started", "EVENT_ALREADY_STARTED");
         }
     }
 
-    private static void statusAbleToCancel(Event event) {
-        EventStatus status = event.getStatus();
-        if(!status.canTransitionTo(EventStatus.CANCELLED)){
+    private void validateReasonWhenCloseToStart(Event event, String reason, Instant now){
+        Duration timeUntilStart = Duration.between(now, event.getStartsAt());
+
+        boolean isCloseToStart = timeUntilStart.compareTo(REASON_REQUIRED_WINDOW) < 0;
+        boolean hasNoReason = reason == null || reason.isBlank();
+
+        if(isCloseToStart && hasNoReason){
             throw new BusinessRuleException(
-                    "Cannot update an event with status " + event.getStatus(), "EVENT_NOT_EDITABLE");
+                    "A reason is required to cancel an event starting in less than %d hours"
+                            .formatted(REASON_REQUIRED_WINDOW.toHours()),
+                    "CANCELLATION_REASON_REQUIRED");
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.ticketflow.api.notification;
+package com.ticketflow.api.event.port;
 
 import com.ticketflow.api.event.Event;
 

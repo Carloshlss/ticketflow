@@ -1,6 +1,7 @@
 package com.ticketflow.api.notification;
 
 import com.ticketflow.api.event.Event;
+import com.ticketflow.api.event.port.EventNotificationPort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;

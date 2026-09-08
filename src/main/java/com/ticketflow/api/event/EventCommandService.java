@@ -3,14 +3,12 @@ package com.ticketflow.api.event;
 import com.ticketflow.api.event.dto.CreateEventRequest;
 import com.ticketflow.api.event.dto.EventResponse;
 import com.ticketflow.api.event.dto.UpdateEventRequest;
-import com.ticketflow.api.notification.EventNotificationPort;
+import com.ticketflow.api.event.port.EventNotificationPort;
 import com.ticketflow.api.shared.exception.BusinessRuleException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
 
 /**
  * [SRP] Responsabilidade ÚNICA: EXECUTAR MUDANÇAS DE ESTADO em eventos.
@@ -83,10 +81,25 @@ public class EventCommandService {
 
     public EventResponse cancel(Long id, String reason){
         Event event = eventQueryService.getRequiredEvent(id);
-        eventCancellationPolicy.check(event, reason, Instant.now());
-        //event.cancel();
-        notificationPort.notifyEventCancelled(event, "TODO");
-        // [FASE 9] Aqui publicaremos o domain event "EventCancelled" no Kafka.
+
+        // 1. A POLICY decide se pode (pode lançar exceção -> handler devolve 409)
+        eventCancellationPolicy.ensureCanBeCancelled(event, reason);
+
+        // 2. A ENTIDADE executa a mudança de estado.
+        //    ⚠️ ESTA LINHA É O CANCELAMENTO. Sem ela, nada acontece no banco.
+        //    Não há save(): a entidade é MANAGED e o dirty checking dispara o
+        //    UPDATE no commit da transação. (Conceito da Fase 2, em ação.)
+        event.cancel();
+
+        log.info("Event id={} cancelled. reason={}", id, reason);
+
+        // 3. Notifica, passando o motivo REAL
+        notificationPort.notifyEventCancelled(event, reason);
+
+        // [FASE 9] Isto virará: eventPublisher.publishEvent(new EventCancelled(id, reason))
+        // com @TransactionalEventListener(AFTER_COMMIT), para que a notificação
+        // não rode dentro da transação nem possa causar rollback do cancelamento.
+        
         return eventMapper.toResponse(event);
     }
 
