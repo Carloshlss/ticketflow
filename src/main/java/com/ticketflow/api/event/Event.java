@@ -166,8 +166,8 @@ public class Event {
         this.status = target;
     }
 
-    public void publish(){
-        if(hasAlreadyStarted()){
+    public void publish(Instant now){
+        if(hasAlreadyStarted(now)){
             throw new BusinessRuleException("Cannot publish an event that already started", "EVENT_ALREADY_STARTED");
         }
         transitionTo(EventStatus.PUBLISHED);
@@ -177,8 +177,8 @@ public class Event {
         transitionTo(EventStatus.CANCELLED);
     }
 
-    public boolean hasAlreadyStarted(){
-        return startsAt.isBefore(Instant.now());
+    public boolean hasAlreadyStarted(Instant now){
+        return startsAt.isBefore(now);
     }
 
     public boolean hasSales(){

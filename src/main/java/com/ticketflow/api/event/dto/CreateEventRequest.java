@@ -2,6 +2,7 @@ package com.ticketflow.api.event.dto;
 
 // [BEAN VALIDATION] jakarta.validation — a ESPECIFICAÇÃO.
 // A implementação (Hibernate Validator) vem no spring-boot-starter-validation<.
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ticketflow.api.validation.EventIntervalAware;
 import com.ticketflow.api.validation.ValidEventDuration;
 import jakarta.validation.constraints.*;
@@ -82,6 +83,15 @@ public record CreateEventRequest(
      * [CLEAN CODE] Mantém a regra JUNTO do contrato que ela protege,
      * em vez de espalhada num if dentro do service.
      */
+    /**
+     * [BEAN VALIDATION] Método de validação cross-field. O Jackson trata
+     * qualquer método isX()/getX() como propriedade de leitura e o
+     * SERIALIZA — vazando "endDateAfterStartDate": true no JSON.
+     *
+     * @JsonIgnore corta isso. É invisível até você olhar o payload real —
+     * outro ponto para o hábito de LER o corpo impresso no log de falha.
+     */
+    @JsonIgnore
     @AssertTrue(message = "event.dates.order")
     public boolean isEndDateAfterStartDate(){
         // null é tratado pelo @NotNull; aqui não é nosso trabalho.

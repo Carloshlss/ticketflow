@@ -110,7 +110,7 @@ public class EventController {
         EventResponse created = eventCommandService.create(request);
 
         URI location = uriBuilder
-                .path("/api/v1/event/{id}")
+                .path("/api/v1/events/{id}")
                 .buildAndExpand(created.id())
                 .toUri();
 
@@ -139,13 +139,25 @@ public class EventController {
     }
 
     @PostMapping("/{id}/cancel")
-    public EventResponse cancelEvent(@PathVariable Long id, @Valid @RequestBody(required = false) CancelEventRequest request){
+    public EventResponse cancelEvent(@PathVariable Long id,
+                                     @Valid @RequestBody(required = false) CancelEventRequest request){
 
         // Null-safe: corpo ausente ou campo ausente -> reason nulo, e a policy
         // decide se isso é aceitável naquele contexto.
         String reason = (request != null) ? request.reason() : null;
 
         return eventCommandService.cancel(id, reason);
+    }
+
+    /**
+     * [REST] PATCH, não PUT: alteração PARCIAL do recurso.
+     * Ação de negócio como sub-recurso também seria aceitável
+     * (POST /events/{id}/reschedule) — as duas convenções existem.
+     */
+    @PatchMapping("/{id}/reschedule")
+    public EventResponse rescheduleEvent(@PathVariable Long id,
+                                         @Valid @RequestBody RescheduleEventRequest request){
+        return eventCommandService.reschedule(id, request);
     }
 
     /**

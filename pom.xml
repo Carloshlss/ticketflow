@@ -1,54 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<!-- [SPRING BOOT] O parent traz o "dependency management": um catálogo
-         gigante de versões já testadas juntas. É por isso que abaixo você
-         declara dependências SEM <version> — o parent decide qual usar.
-         Isso elimina o inferno de conflito de versões (dependency hell). -->
+	<!-- [SPRING BOOT] O parent traz o dependency management: catálogo de
+	     versões testadas juntas. É por isso que as dependências abaixo não
+	     declaram <version> — o parent decide. Elimina dependency hell. -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.1.1</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 
-	<!-- [MAVEN] Coordenadas que identificam seu artefato de forma única -->
 	<groupId>com.ticketflow</groupId>
 	<artifactId>ticketflow-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+	<name>ticketflow-api</name>
+	<description>TicketFlow API - learning project</description>
+
 	<properties>
-		<!-- [JAVA 21] Define a versão da linguagem e da JVM alvo -->
 		<java.version>21</java.version>
+		<!-- [CLEAN CODE NO BUILD] Versões de libs NÃO gerenciadas pelo parent
+		     ficam centralizadas aqui, não espalhadas nas dependências. -->
+		<springdoc.version>3.1.0</springdoc.version>
+		<archunit.version>1.4.0</archunit.version>
+		<jacoco.version>0.8.13</jacoco.version>
 	</properties>
+
 	<dependencies>
+
+		<!-- ══════════════════ WEB ══════════════════ -->
+
+		<!-- [BOOT 4] 'starter-web' foi renomeado para 'starter-webmvc'. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+
+		<!-- ══════════════════ PERSISTÊNCIA ══════════════════ -->
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+
+		<!-- Módulo de dialeto do Flyway. SEM <version>: o starter-flyway
+		     alinha com a versão do flyway-core. Travar aqui gera
+		     incompatibilidade silenciosa em runtime. -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
+		<!-- Driver JDBC: runtime porque seu código nunca importa classes
+		     dele — quem usa é o Hibernate. -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- ══════════════════ FERRAMENTAS ══════════════════ -->
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
 		</dependency>
 
 		<dependency>
@@ -57,61 +90,18 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
-			<scope>test</scope>
-		</dependency>
 
-		<!-- [SPRING DATA JPA] Traz: Spring Data JPA + Hibernate + HikariCP +
-     spring-tx (transações) + spring-jdbc. Uma linha, toda a stack de persistência. -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
-		</dependency>
-		<!-- [DRIVER JDBC] Implementação do protocolo do PostgreSQL.
-     scope=runtime: precisa existir ao rodar, não ao compilar (seu código
-     nunca importa classes do driver — quem usa é o Hibernate). -->
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-flyway</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-database-postgresql</artifactId>
-			<version>10.20.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation</artifactId>
-		</dependency>
-
-		<!-- [OPENAPI] springdoc gera a especificação OpenAPI 3 lendo seus
-     controllers e DTOs por reflection, e serve o Swagger UI.
-     ⚠️ Verifique a versão compatível com Spring Boot 4 em
-     https://springdoc.org — o artifactId muda entre linhas do Boot. -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>3.1.0</version>
+			<version>${springdoc.version}</version>
 		</dependency>
 
+		<!-- ⚠️ [BOOT 4] p6spy-spring-boot-starter depende do
+		     spring-boot-autoconfigure MONOLÍTICO, que o Boot 4 quebrou em
+		     módulos. Se a app não subir, COMENTE esta dependência e remova o
+		     bloco 'decorator:' dos application.yml.
+		     O hibernate.generate_statistics cobre a contagem de queries. -->
 		<dependency>
 			<groupId>com.github.gavlyukovskiy</groupId>
 			<artifactId>p6spy-spring-boot-starter</artifactId>
@@ -119,10 +109,71 @@
 			<optional>true</optional>
 		</dependency>
 
+		<!-- ══════════════════ TESTE ══════════════════ -->
+
+		<!-- Starter BASE de teste: JUnit, AssertJ, Mockito, Spring Test,
+		     Hamcrest, JsonPath. No Boot 4 o modelo é:
+		     starter-test (núcleo) + um *-test companion por tecnologia. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Companion do webmvc: @WebMvcTest, @AutoConfigureMockMvc,
+		     MockMvc, RestTestClient. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Companion do JPA: @DataJpaTest. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- [TESTCONTAINERS 2.x] Artefatos renomeados no Boot 4.
+		     ⚠️ NÃO declare o testcontainers-bom: o parent já gerencia a
+		     versão 2.x, e importar o BOM 1.x força a versão antiga e
+		     quebra o @ServiceConnection. -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Cola oficial Spring Boot <-> Testcontainers: habilita
+		     @ServiceConnection. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>com.tngtech.archunit</groupId>
 			<artifactId>archunit-junit5</artifactId>
-			<version>1.4.0</version>
+			<version>${archunit.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -133,42 +184,99 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
+			<!-- [LOMBOK] annotationProcessorPaths explícito. Necessário
+			     porque, com o Lombok em <optional>, o Maven não o adiciona
+			     automaticamente ao processor path em algumas versões. -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+
+			<!-- [JACOCO] Cobertura. prepare-agent instrumenta o bytecode em
+			     memória; report gera o HTML; check é o quality gate. -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<configuration>
+					<excludes>
+						<exclude>**/TicketflowApiApplication.class</exclude>
+						<exclude>**/config/**</exclude>
+						<exclude>**/dto/**</exclude>
+						<exclude>**/*Request.class</exclude>
+						<exclude>**/*Response.class</exclude>
+						<exclude>**/*Dto.class</exclude>
+						<exclude>**/exception/*Exception.class</exclude>
+					</excludes>
+				</configuration>
+
 				<executions>
 					<execution>
-						<id>default-compile</id>
-						<phase>compile</phase>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-						<configuration>
-							<annotationProcessorPaths>
-								<path>
-									<groupId>org.projectlombok</groupId>
-									<artifactId>lombok</artifactId>
-								</path>
-							</annotationProcessorPaths>
-						</configuration>
+						<id>prepare-agent</id>
+						<goals><goal>prepare-agent</goal></goals>
 					</execution>
 					<execution>
-						<id>default-testCompile</id>
-						<phase>test-compile</phase>
-						<goals>
-							<goal>testCompile</goal>
-						</goals>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals><goal>report</goal></goals>
+					</execution>
+					<execution>
+						<id>check</id>
+						<phase>verify</phase>
+						<goals><goal>check</goal></goals>
 						<configuration>
-							<annotationProcessorPaths>
-								<path>
-									<groupId>org.projectlombok</groupId>
-									<artifactId>lombok</artifactId>
-								</path>
-							</annotationProcessorPaths>
+							<rules>
+								<rule>
+									<element>BUNDLE</element>
+									<limits>
+										<limit>
+											<!-- BRANCH > LINE: um 'if' avaliado só
+											     como false conta 100% de linha e
+											     50% de branch. -->
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<!-- ⚠️ Comece em 0.50 e SUBA. Um gate
+											     que já nasce vermelho é um gate que
+											     você vai desabilitar. -->
+											<minimum>0.40</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
+			<!-- [MOCKITO + JDK 21+] O Mockito precisa de um Java agent para o
+			 inline-mock-maker. Hoje ele se auto-anexa e só avisa; em JDKs futuros
+			 isso falha. Declarar o agente explicitamente elimina o warning e
+			 imuniza o build contra a mudança. -->
+<!--			<plugin>-->
+<!--				<groupId>org.apache.maven.plugins</groupId>-->
+<!--				<artifactId>maven-surefire-plugin</artifactId>-->
+<!--				<configuration>-->
+<!--					<argLine>-->
+<!--						@{argLine}-->
+<!--						-javaagent:${org.mockito:mockito-core:jar}-->
+<!--						-Xshare:off-->
+<!--					</argLine>-->
+<!--				</configuration>-->
+<!--			</plugin>-->
+
+			<!-- ❌ PIT (mutation testing) REMOVIDO POR ORA.
+			     O pitest-junit5-plugin ainda não suporta JUnit 6, que o
+			     Boot 4 usa. Reavaliar na Fase 13. A explicação conceitual
+			     do mutation testing continua valendo. -->
 		</plugins>
 	</build>
 

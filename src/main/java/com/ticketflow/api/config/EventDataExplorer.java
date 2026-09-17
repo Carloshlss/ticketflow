@@ -67,9 +67,9 @@ public class EventDataExplorer {
             eventRepository.findAvailableEvents(EventStatus.PUBLISHED, Instant.now())
                     .forEach(e -> log.info("Available: {}", e.getName()));
 
-            log.info("=== 4. Native query com projeção ===");
-            eventRepository.countPublishedEventsByCity()
-                    .forEach(row -> log.info("{} -> {}", row[0], row[1]));
+//            log.info("=== 4. Native query com projeção ===");
+//            eventRepository.countPublishedEventsByCity()
+//                    .forEach(row -> log.info("{} -> {}", row[0], row[1]));
 
             log.info("=== 5. INSERT: observe o SQL e os campos de auditoria ===");
             Event created = eventRepository.save(Event.builder()
@@ -125,7 +125,7 @@ public class EventDataExplorer {
 
             log.info("=== 8. testando o findByTicketPriceBetweenAndCityIgnoreCase no repositório ===");
             eventRepository.findByTicketPriceBetweenAndCityIgnoreCase(
-                    new BigDecimal("50.00"), new BigDecimal("350.00"), "São Paulo")
+                    new BigDecimal("50.00"), new BigDecimal("350.00"), "Sao Paulo")
                     .forEach(e -> log.info("{} | {} | {} | {}",
                             e.getId(), e.getName(), e.getTicketPrice(), e.getCity()));
         };

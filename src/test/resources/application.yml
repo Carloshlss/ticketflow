@@ -1,0 +1,38 @@
+# [SPRING TEST] Config EXCLUSIVA de teste. src/test/resources tem precedência
+# sobre src/main/resources quando os testes rodam.
+#
+# Note o que NÃO está aqui: nenhuma URL de banco. Com @ServiceConnection, o
+# Testcontainers informa url/user/senha ao Spring em runtime. Um datasource
+# hardcoded aqui seria justamente o erro que queremos evitar.
+spring:
+  jpa:
+    show-sql: false          # ligue pontualmente quando investigar uma query
+    open-in-view: false
+  flyway:
+    enabled: true            # o schema de teste vem das MESMAS migrations
+    clean-disabled: false    # permite limpar entre classes, se necessário
+  properties:
+    hibernate:
+      generate_statistics: true
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        # ⚠️ DEVE espelhar o application.yml de main.
+        # O arquivo de teste SUBSTITUI o de main — não complementa.
+        # Divergência aqui produz teste que passa e produção que não se
+        # comporta como o teste afirma.
+        max-page-size: 100
+
+# p6spy desligado nos testes: polui o output. Ligue ao caçar N+1.
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+
+logging:
+  level:
+    root: WARN                          # silencia o ruído
+    com.ticketflow.api: INFO
+    org.testcontainers: INFO
+    org.hibernate.SQL: WARN

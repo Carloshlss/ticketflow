@@ -2,6 +2,7 @@ package com.ticketflow.api.event;
 
 import com.ticketflow.api.event.dto.CreateEventRequest;
 import com.ticketflow.api.event.dto.EventResponse;
+import com.ticketflow.api.event.dto.RescheduleEventRequest;
 import com.ticketflow.api.event.dto.UpdateEventRequest;
 import com.ticketflow.api.event.port.EventNotificationPort;
 import com.ticketflow.api.shared.exception.BusinessRuleException;
@@ -9,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Clock;
 
 /**
  * [SRP] Responsabilidade ÚNICA: EXECUTAR MUDANÇAS DE ESTADO em eventos.
@@ -38,6 +41,9 @@ public class EventCommandService {
     private final EventMapper eventMapper;
     private final EventNotificationPort notificationPort;
     private final EventCancellationPolicy eventCancellationPolicy;
+    private final EventReschedulePolicy reschedulePolicy;
+    private final EventUpdatePolicy updatePolicy;
+    private final Clock clock;
 
     public EventResponse create(CreateEventRequest request){
         log.info("Creating event: {}", request.name());
@@ -53,16 +59,9 @@ public class EventCommandService {
     public EventResponse update(Long id, UpdateEventRequest request){
         Event event = eventQueryService.getRequiredEvent(id);
 
-        // [CLEAN CODE] Compare com o antes:
-        //   if (status == CANCELLED || status == FINISHED) throw ...
-        // A regra "quais status são editáveis" vive AGORA no EventStatus.
-        // Se amanhã SOLD_OUT virar editável, muda em 1 lugar.
-        if(!event.getStatus().isEditable()){
-            throw new BusinessRuleException(
-                    "Cannot update an event with status " + event.getStatus(), "EVENT_NOT_EDITABLE");
-        }
-
+        updatePolicy.ensureCanBeUpdated(event, request);
         uniquenessChecker.assertNameIsAvailableForUpdate(request.name(), id);
+
         eventMapper.updateEntity(event, request);   // dirty checking persiste
         return eventMapper.toResponse(event);
     }
@@ -74,7 +73,7 @@ public class EventCommandService {
      */
     public EventResponse publish(Long id){
         Event event = eventQueryService.getRequiredEvent(id);
-        event.publish();
+        event.publish(clock.instant());
         notificationPort.notifyEventPublished(event);
         return eventMapper.toResponse(event);
     }
@@ -100,6 +99,19 @@ public class EventCommandService {
         // com @TransactionalEventListener(AFTER_COMMIT), para que a notificação
         // não rode dentro da transação nem possa causar rollback do cancelamento.
         
+        return eventMapper.toResponse(event);
+    }
+
+    public EventResponse reschedule(Long id, RescheduleEventRequest request){
+        Event event = eventQueryService.getRequiredEvent(id);
+        EventStatus statusBefore = event.getStatus();
+
+        reschedulePolicy.reschedule(event, request.newStartsAt(), request.newEndsAt());
+
+        // Só notifica se já estava público — quem comprou precisa saber.
+        if(statusBefore == EventStatus.PUBLISHED){
+            notificationPort.notifyEventRescheduled(event);
+        }
         return eventMapper.toResponse(event);
     }
 

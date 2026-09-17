@@ -1,5 +1,6 @@
 package com.ticketflow.api.event;
 
+import com.ticketflow.api.event.dto.CityEventCount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -95,13 +96,13 @@ public interface EventRepository extends JpaRepository<Event, Long>,
      * CTE, JSONB). Custo: perde portabilidade e usa nomes de TABELA/COLUNA.
      */
     @Query(value = """
-                SELECT city, COUNT(*) AS total
+                SELECT city AS city, COUNT(*) AS total
                 FROM event
                 WHERE status = 'PUBLISHED'
                 GROUP BY city
-                ORDER BY total DESC
+                ORDER BY total DESC, city ASC
                 """, nativeQuery = true)    // [JAVA 15+] Text Block: string multilinha legível. Não existe no Java 8!
-    List<Object[]> countPublishedEventsByCity();
+    List<CityEventCount> countPublishedEventsByCity();
 
     List<Event> findByTicketPriceBetweenAndCityIgnoreCase(BigDecimal min, BigDecimal max, String city);
 }

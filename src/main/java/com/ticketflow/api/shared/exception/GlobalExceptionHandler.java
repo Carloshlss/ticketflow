@@ -187,7 +187,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleUnreadableBody(
             HttpMessageNotReadableException ex, HttpServletRequest request){
         log.warn("Malformed request body: {}", ex.getMessage());
-        return build(HttpStatus.BAD_REQUEST, "MALVORMED_REQUEST",
+        return build(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST",
                 "Request body is malformed or contains invalid values", request, null);
     }
 

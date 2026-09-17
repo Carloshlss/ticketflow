@@ -17,4 +17,6 @@ public interface EventNotificationPort {
     void notifyEventPublished(Event event);
 
     void notifyEventCancelled(Event event, String reason);
+
+    void notifyEventRescheduled(Event event);
 }
